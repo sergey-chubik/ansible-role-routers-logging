@@ -1,0 +1,8 @@
+---
+
+- name: SAVE CONFIG HUAWEI
+  cli_command:
+    command: save
+    prompt: Are you sure to continue?
+    answer: y
+  when: ansible_network_os == 'ce'

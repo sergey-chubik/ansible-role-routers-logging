@@ -1,0 +1,58 @@
+---
+
+- name: RUN CISCO LOGGING COMMAND
+  ios_config:
+    lines:
+      - hostname {{ hostname }}
+      - service timestamps debug datetime localtime
+      - service timestamps log datetime localtime
+      - logging buffered 51200 informational
+      - logging trap notifications
+      - logging origin-id hostname
+      - logging facility local2
+      - logging source-interface {{ mgmnt_int }}
+      - logging host {{ log_server }} transport udp port 1514
+      - ip ssh logging events
+    save_when: modified
+  when: ansible_network_os == 'ios'
+
+- name: RUN JUNOS LOGGING COMMAND
+  junos_config:
+    lines:
+      - set security alg h323 disable
+      - set security alg sip disable
+      - set security alg msrpc disable
+      - set security alg ftp disable
+      - set system syslog file messages any notice
+      - set system syslog file messages authorization info
+      - set system syslog file messages change-log info
+      - set system syslog file messages pfe error
+      - set system syslog file messages daemon error
+      - set system syslog file messages kernel error
+      - set system syslog file messages interactive-commands error
+      - set system syslog file messages archive size 2m files 5 no-world-readable
+      - set system syslog file interactive-commands interactive-commands info
+      - set system syslog file interactive-commands archive size 2m files 5 no-world-readable
+      - set system syslog host {{ log_server }} port 1514 source-address {{ mgmnt_ip }} any notice
+      - set system syslog host {{ log_server }} daemon error
+      - set system syslog host {{ log_server }} pfe error
+      - set system syslog host {{ log_server }} kernel error
+      - set system syslog host {{ log_server }} ntp error
+      - set system syslog host {{ log_server }} interactive-commands error
+      - set system syslog host {{ log_server }} change-log info
+      - set system syslog host {{ log_server }} authorization info
+      - set system syslog host {{ log_server }} user error
+      - set system syslog host {{ log_server }} explicit-priority
+  when: ansible_network_os == 'junos'
+
+- name: RUN CONFIGURE QoS on HUAWEI ROUTERS
+  block:
+    - name: RUN HUAWEI LOGGING COMMAND
+      cli_command:
+        command: |
+          system-view
+          info-center loghost {{ log_server }} channel 6 port 1514 transport udp local-time facility local5
+          info-center loghost source {{ mgmnt_int }}
+          quit
+    - include: save_config_huawei.yml
+  when: ansible_network_os == 'ce'
